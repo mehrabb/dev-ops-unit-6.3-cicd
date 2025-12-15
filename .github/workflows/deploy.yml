@@ -1,0 +1,61 @@
+name: Deploy Application
+
+# 1. Pipeline Trigger
+on:
+  # Triggers the workflow on push to the 'development' branch
+  push:
+    branches:
+      - development
+  # Allows you to manually run the workflow from the GitHub Actions tab
+  workflow_dispatch:
+
+# 2. Define Jobs
+jobs:
+  deploy-dev:
+    name: Deploy to Development VM
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up SSH agent and use the private key secret
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          # Use the secret we stored in GitHub Settings
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # Deployment step (The magic happens here)
+      - name: Deploy to Development Server
+        run: |
+          # 1. Define variables from secrets
+          VM_IP=${{ secrets.DEV_VM_IP }}
+          SSH_USER=ec2-user
+          TARGET_DIR="/var/www/app"
+
+          # 2. Use rsync to securely copy all code (excluding hidden Git files)
+          # We use the pipeline's key for authentication
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ \
+            ${SSH_USER}@${VM_IP}:${TARGET_DIR}/
+
+          # 3. Connect to the VM and run deployment script commands
+          ssh ${SSH_USER}@${VM_IP} -o StrictHostKeyChecking=no << EOF
+            # Switch to the application directory
+            cd ${TARGET_DIR}
+            
+            # Activate the virtual environment
+            source venv/bin/activate
+            
+            # Stop any running process (if it exists)
+            sudo pkill gunicorn || true
+
+            # Run the application using Gunicorn on port 80
+            # Note: We run it in the background (&) so the SSH session can close
+            # We use 'nohup' so it keeps running even if the terminal closes
+            nohup gunicorn --bind 0.0.0.0:80 application:application &
+          EOF
