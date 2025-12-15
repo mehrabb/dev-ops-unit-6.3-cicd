@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - development
+      - staging
   # Allows you to manually run the workflow from the GitHub Actions tab
   workflow_dispatch:
 
@@ -60,3 +61,31 @@ jobs:
             # We use 'nohup' so it keeps running even if the terminal closes
             nohup gunicorn --bind 0.0.0.0:8080 application:application &
           EOF
+  deploy-staging: # New Job for Staging
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging' # Ensure job runs only for staging branch
+
+    steps:
+      # (Existing checkout and SSH setup steps are identical here)
+
+      - name: Deploy to Staging Server
+        run: |
+          # Use the Staging secret for the IP address
+          VM_IP=${{ secrets.STAGING_VM_IP }} 
+          SSH_USER=ec2-user
+          TARGET_DIR="/var/www/app"
+
+          # 2. Use rsync to securely copy all code (excluding venv)
+          rsync -avz --delete \
+            --exclude venv \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ \
+            ${SSH_USER}@${VM_IP}:${TARGET_DIR}/
+
+          # 3. Stop and Restart Gunicorn on Staging VM
+          ssh ${SSH_USER}@${VM_IP} -o StrictHostKeyChecking=no << EOF
+            cd ${TARGET_DIR}
+            sudo pkill gunicorn || true
+            nohup /var/www/app/venv/bin/gunicorn --bind 0.0.0.0:8080 application:application &
+          EOF        
