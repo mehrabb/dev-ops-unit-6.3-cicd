@@ -58,5 +58,5 @@ jobs:
             # Run the application using Gunicorn on port 80
             # Note: We run it in the background (&) so the SSH session can close
             # We use 'nohup' so it keeps running even if the terminal closes
-            nohup gunicorn --bind 0.0.0.0:80 application:application &
+            nohup sudo gunicorn --bind 0.0.0.0:80 application:application &
           EOF
