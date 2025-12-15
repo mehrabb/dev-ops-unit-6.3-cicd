@@ -1,0 +1,16 @@
+# Python Virtual Environments
+venv/
+__pycache__/
+*.pyc
+
+# VI/VIM temporary files
+*~
+*.swp
+.netrwhist
+
+# IDE files (e.g., VS Code)
+.vscode/
+
+# Deployment Keys (CRITICAL TO IGNORE)
+gh_action_deploy_key
+gh_action_deploy_key.pub
