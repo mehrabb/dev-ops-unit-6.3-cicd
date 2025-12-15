@@ -39,6 +39,7 @@ jobs:
           # 2. Use rsync to securely copy all code (excluding hidden Git files)
           # We use the pipeline's key for authentication
           rsync -avz --delete \
+            --exclude venv \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ \
             ${SSH_USER}@${VM_IP}:${TARGET_DIR}/
