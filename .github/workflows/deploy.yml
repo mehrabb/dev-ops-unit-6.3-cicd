@@ -67,7 +67,16 @@ jobs:
     if: github.ref == 'refs/heads/staging' # Ensure job runs only for staging branch
 
     steps:
-      # (Existing checkout and SSH setup steps are identical here)
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up SSH agent and use the private key secret
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          # Use the secret we stored in GitHub Settings
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Deploy to Staging Server
         run: |
@@ -88,4 +97,4 @@ jobs:
             cd ${TARGET_DIR}
             sudo pkill gunicorn || true
             nohup /var/www/app/venv/bin/gunicorn --bind 0.0.0.0:8080 application:application > /var/www/app/gunicorn.log 2>&1 &
-          EOF        
+          EOF
