@@ -16,6 +16,7 @@ jobs:
   deploy-dev:
     name: Deploy to Development VM
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development' # Ensure job runs only for Development branch
     environment: development
 
     steps:
