@@ -59,7 +59,7 @@ jobs:
             # Run the application using Gunicorn on port 80
             # Note: We run it in the background (&) so the SSH session can close
             # We use 'nohup' so it keeps running even if the terminal closes
-            nohup gunicorn --bind 0.0.0.0:8080 application:application &
+            nohup gunicorn --bind 0.0.0.0:8080 application:application > /var/www/app/gunicorn.log 2>&1 &
           EOF
   deploy-staging: # New Job for Staging
     name: Deploy to Staging
@@ -87,5 +87,5 @@ jobs:
           ssh ${SSH_USER}@${VM_IP} -o StrictHostKeyChecking=no << EOF
             cd ${TARGET_DIR}
             sudo pkill gunicorn || true
-            nohup /var/www/app/venv/bin/gunicorn --bind 0.0.0.0:8080 application:application &
+            nohup /var/www/app/venv/bin/gunicorn --bind 0.0.0.0:8080 application:application > /var/www/app/gunicorn.log 2>&1 &
           EOF        
